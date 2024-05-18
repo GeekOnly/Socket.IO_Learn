@@ -17,14 +17,25 @@
         </style>
     </head>
     <body>
-        <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-        <script>
-            const socket = io();
-        </script>
-
         <ul id="messages"> </ul>
         <form id="form" action="">
             <input id="input" autocomplete="off" /><button>Send</button>
         </form>
+
+        <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+        <script>
+            const socket = io();
+
+            const form = document.getElementById("form");
+            const input = document.getElementById("input");
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                if (input.value){
+                    socket.emit('chat message', input.value);
+                    input.value = '';
+                }
+            });
+        </script>
     </body>
 </html>
