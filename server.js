@@ -38,18 +38,25 @@ async function main() {
             console.log('user disconnected');
         });
     
-        socket.on('chat message',async (msg) => {
+        socket.on('chat message',async (msg, clientOffset, callback) => {
             let result;
             try {
                 // store the message in the database
-                result = await db.run('INSERT INTO messages (content) VALUES (?)', msg);
+                result = await db.run('INSERT INTO messages (content) VALUES (?)', msg, clientOffset);
             } catch (e) {
                 // TODO handle the failure
-                console.log(e);
+                if(e.error === 19 /* SQLITE_CONSTRAINT */) {
+                    // the message was already inserted, so we notify the client
+                    callback();
+                } else {
+                    // nothing to do, just let the client rerey
+                }
                 return;
             }
             // include offset with the message
             io.emit('chat message', msg, result.lastID);
+            // acknowledge the event
+            callback();
         });
 
         if(!socket.recovered){
