@@ -4,7 +4,22 @@ const { join } = require('node:path');
 const { Server } = require('socket.io');
 const sqlite3 = require('sqlite3');
 const { open } = require('sqlite');
+const { availableParallelism } = require('node:os');
+const cluster = require('node:cluster');
+const { createAdapter, setupPrimary } = require('@socket.io/cluster-adapter');
 
+if(cluster.isPrimary){
+    const numCPUs = availableParallelism();
+    // create one worker per available core
+    for (let i = 0; i < numCPUs; i++) {
+        cluster.fork({
+            PORT: 3000 + i
+        });
+    }
+
+    // set up the adapter on the primary thread
+    return setupPrimary();
+}
 
 async function main() {
     // open the database file
@@ -24,7 +39,9 @@ async function main() {
     const app = express();
     const server = createServer(app);
     const io = new Server(server, {
-        connectionStateRecovery: {} // Save State Recovery
+        connectionStateRecovery: {}, // Save State Recovery
+        // set up the adapter on each worker thread
+        adapter: createAdapter()
     });
     
     app.get('/', (req, res) =>{
@@ -42,7 +59,7 @@ async function main() {
             let result;
             try {
                 // store the message in the database
-                result = await db.run('INSERT INTO messages (content) VALUES (?)', msg, clientOffset);
+                result = await db.run('INSERT INTO messages (content, client_offset) VALUES (?, ?)', msg, clientOffset);
             } catch (e) {
                 // TODO handle the failure
                 if(e.error === 19 /* SQLITE_CONSTRAINT */) {
@@ -74,9 +91,11 @@ async function main() {
         }
     });
     
+    // each worker will listen on a distinct port
+    const port = process.env.port;
 
-    server.listen(8088, () => {
-        console.log('Server is running at http://localhost:8088');
+    server.listen(port, () => {
+        console.log(`Server is running at http://localhost:${port}`);
     });
 }
 
