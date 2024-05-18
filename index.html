@@ -17,6 +17,11 @@
         </style>
     </head>
     <body>
+        <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+        <script>
+            const socket = io();
+        </script>
+
         <ul id="messages"> </ul>
         <form id="form" action="">
             <input id="input" autocomplete="off" /><button>Send</button>
