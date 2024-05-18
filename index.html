@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Socket.io Client</title>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <h1>WebSocket Client</h1>
+  <script>
+    var socket = io("http://localhost:3000");
+
+    socket.emit('message', 'hola from js client');
+
+    socket.on('message', function(msg){
+      console.log(msg);
+    });
+  </script>
+</body>
+</html>
